@@ -1,6 +1,5 @@
 import { useState } from "react";
 import "./styles.css";
-
 const checkboxesData = [
   {
     id: 1,
@@ -10,24 +9,8 @@ const checkboxesData = [
         id: 2,
         name: "Citrus",
         Children: [
-          {
-            id: 3,
-            name: "Orange",
-          },
-          {
-            id: 4,
-            name: "Lemon",
-            Children: [
-              {
-                id: 21,
-                name: "Orange",
-              },
-              {
-                id: 22,
-                name: "Lemon",
-              },
-            ],
-          },
+          { id: 3, name: "Orange" },
+          { id: 4, name: "Lemon" },
         ],
       },
       {
@@ -37,11 +20,26 @@ const checkboxesData = [
           {
             id: 6,
             name: "Strawberry",
+            Children: [
+              {
+                id: 20,
+                name: "Citrus",
+                Children: [
+                  { id: 23, name: "Orange" },
+                  { id: 24, name: "Lemon" },
+                ],
+              },
+              {
+                id: 25,
+                name: "Berries",
+                Children: [
+                  { id: 26, name: "Strawberry" },
+                  { id: 27, name: "Blueberry" },
+                ],
+              },
+            ],
           },
-          {
-            id: 7,
-            name: "Blueberry",
-          },
+          { id: 7, name: "Blueberry" },
         ],
       },
     ],
@@ -54,28 +52,16 @@ const checkboxesData = [
         id: 9,
         name: "Citrus",
         Children: [
-          {
-            id: 10,
-            name: "Orange",
-          },
-          {
-            id: 11,
-            name: "Lemon",
-          },
+          { id: 10, name: "Orange" },
+          { id: 11, name: "Lemon" },
         ],
       },
       {
         id: 12,
         name: "Berries",
         Children: [
-          {
-            id: 13,
-            name: "Strawberry",
-          },
-          {
-            id: 14,
-            name: "Blueberry",
-          },
+          { id: 13, name: "Strawberry" },
+          { id: 14, name: "Blueberry" },
         ],
       },
     ],
@@ -83,15 +69,57 @@ const checkboxesData = [
 ];
 
 const Checkboxes = ({ data, checked, setChecked }) => {
+  const handleChange = (isChecked, node) => {
+    setChecked((prev) => {
+      const newState = { ...prev, [node.id]: isChecked };
+
+      const updateChildren = (node) => {
+        node.Children?.forEach((child) => {
+          newState[child.id] = isChecked;
+          child.Children && updateChildren(child);
+        });
+      };
+      updateChildren(node);
+
+      const verifyChecked = (node) => {
+        if (!node.Children) return newState[node.id] || false;
+
+        const allChildrenChecked = node.Children?.every((child) =>
+          verifyChecked(child)
+        );
+        newState[node.id] = allChildrenChecked;
+        return allChildrenChecked;
+      };
+      // checkboxesData.forEach((node) => verifyChecked(node));
+
+      const traverseAndVerify = (nodes) => {
+        nodes.forEach((node) => {
+          verifyChecked(node);
+          if (node.Children) {
+            traverseAndVerify(node.Children);
+          }
+        });
+      };
+
+      traverseAndVerify(checkboxesData);
+
+      return newState;
+    });
+  };
+
   return (
     <div>
-      {data.map((item, index) => (
-        <div key={index} className="parent">
-          <input type="checkbox" checked={checked[index] || false} />
-          <span>{item.name}</span>
-          {item.Children && (
+      {data.map((node) => (
+        <div key={node.id} className="parent">
+          <input
+            type="checkbox"
+            checked={checked[node.id] || false}
+            onChange={(e) => handleChange(e.target.checked, node)}
+          />
+          <span>{node.name}</span>
+          {node.Children && (
             <Checkboxes
-              data={item.Children}
+              data={node.Children}
               checked={checked}
               setChecked={setChecked}
             />
